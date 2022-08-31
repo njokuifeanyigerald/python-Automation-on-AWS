@@ -1,1 +1,1 @@
-how to automate AWS usong python
+how to automate AWS using python
