@@ -1,0 +1,129 @@
+# block 1
+import json, boto3
+from pprint import pprint
+
+ec2_assume_role_policy_doc = json.dumps({
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "ec2.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+})
+
+print(ec2_assume_role_policy_doc)
+
+
+
+# block 2
+gerald = boto3.Session(
+    profile_name= 'gerald.njoku',
+    region_name= "eu-central-1"
+)
+
+# add a a new client
+your name_IAM = gerald.client("iam")
+
+# we create the role with the new client
+response = your name_IAM.create_role(
+    RoleName = "ec2-readonly-gerald-2",
+    AssumeRolePolicyDocument = ec2_assume_role_policy_doc,
+    Description = "Allows an instance to ec2 read-only access",
+    Tags = [
+        {
+            "Key": "gerald.njoku",
+            "Value": "For automation with python"
+        }
+    ]
+)
+
+pprint(response)
+
+
+
+
+# block 3
+ec2_readonly_role_name = response['Role']['RoleName']
+print(ec2_readonly_role_name)
+
+
+
+
+
+
+
+
+# block 4
+# we create the corresponding instance profile
+response = your name_IAM.create_instance_profile(
+    InstanceProfileName   = ec2_readonly_role_name,
+    Tags = [
+        {
+            "Key": "gerald.njoku",
+            "Value": "For automation with python"
+        },
+    ]
+)
+pprint(response)
+
+
+
+
+
+# block 5
+# we assign the EC2 Read Only managed policy to the new role
+your name_IAM.attach_role_policy(
+    PolicyArn= 'arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess',
+    RoleName = ec2_readonly_role_name
+)
+# go to your AWS console and check the role again(ec2role we created)
+
+
+
+# block 6
+response = your name_IAM.add_role_to_instance_profile(
+    InstanceProfileName = ec2_readonly_role_name,
+    RoleName = ec2_readonly_role_name
+)
+
+print(response)
+
+
+
+
+# block 7
+# New client for EC2
+your name_EC2 = gerald.client("ec2")
+
+# we attach the role for an instance
+response = your name_EC2.associate_iam_instance_profile(
+    IamInstanceProfile = {
+        "Name": ec2_readonly_role_name
+    },
+    # remember to put it in the same region, if not, errors go choke  
+    InstanceId  = "i-0e6ab39d2eefef734"
+)
+
+print(response)
+
+
+
+
+# block 8
+# New client for EC2
+your name_EC2 = gerald.client("ec2")
+
+# we attach the role for an instance
+response = <your name_EC2>.associate_iam_instance_profile(
+    IamInstanceProfile = {
+        "Name": ec2_readonly_role_name
+    },
+    # remember to put it in the same region, if not, errors go choke  
+    InstanceId  = "<your Instance ID>"
+)
+
+print(response)

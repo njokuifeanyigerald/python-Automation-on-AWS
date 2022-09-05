@@ -1,0 +1,70 @@
+# blcok 1
+from time import sleep
+
+def grant_role_to_instance (session: boto3.session.Session, instance_id: str,
+                            role_name: str, role_description:str,
+                            policy_to_grant: str) -> None:
+    
+    # this policy allows only EC2 instances to assume this role
+    ec2_assume_role_policy_doc = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "ec2.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+            }
+        ]
+    })
+
+    # IAM Client
+    iam  =  session.client("iam")
+
+    # we create the role with the new client
+    iam.create_role(
+        RoleName = role_name,
+        AssumeRolePolicyDocument = ec2_assume_role_policy_doc,
+        Description = role_description
+    )
+
+    # we create the corresponding instance profile
+    iam.create_instance_profile(
+        InstanceProfileName = role_name,
+    )
+
+    # we assign the ec2 Read Only managed policy to the new role
+    iam.attach_role_policy(
+        PolicyArn=policy_to_grant,
+        RoleName = role_name
+
+    )
+
+    # we assign the role to the instance profile
+    iam.add_role_to_instance_profile(
+        InstanceProfileName= role_name,
+        RoleName = role_name
+    )
+
+    # wait for the changes to propagate
+    sleep(10)
+    # EC2 client
+    ec2 = session.client("ec2")
+    # we attach the role to the instance
+    ec2.associate_iam_instance_profile(
+        IamInstanceProfile={
+            "Name": role_name
+        },
+        InstanceId = instance_id
+    )
+
+
+
+
+
+# block 2
+grant_role_to_instance(session = gerald, instance_id="i-08ea3dc227cf38ff4", role_name= "fucntion_role7",
+                        role_description= "created via another function", 
+                        policy_to_grant="arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess")
+                        
